@@ -36,7 +36,7 @@ export const getAllProduct = async (req: Request, res: Response) => {
 export const getActiveProduct = async (req: Request, res: Response) => {
     try {
 
-        const activeProduct = await Product.find({ isDeleted: false, isSelling: true })
+        const activeProduct = await Product.find({ isDeleted: false, isSelling: true, stock: { $gt: 0 } })
             .sort({ createdAt: -1 })
             .select('-isDeleted -createdAt -updatedAt');
 

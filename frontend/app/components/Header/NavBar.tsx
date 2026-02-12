@@ -24,7 +24,7 @@ const NavBar = () => {
             </li>
 
             <li className='p-1 rounded-sm cursor-pointer hover:text-blue-700 hover:font-extrabold hover:underline-offset-2 hover:underline hover:duration-300 transition-all ease-in-out'>
-                <Link href={'/'}>
+                <Link href={'/hizmetlerimiz'}>
                     <h2>Hizmetler</h2>
                 </Link>
             </li>

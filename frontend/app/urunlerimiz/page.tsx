@@ -15,8 +15,8 @@ const UrunlerPage = () => {
                 <PageHeader
                     title='Tüm Ürünler'
                     subTitle='Kartlı kilit sistemleri, çelik kasalar vb ürünlerimizle hizmetinizdeyiz.'
-                    icon={<FaLock size={100} className='text-blue-200' />}
-                    backGroundColor='bg-linear-to-r from-blue-300 to-blue-950'
+                    icon={<FaLock size={300} className='text-blue-200' />}
+                    backGroundColor='bg-linear-to-r from-yellow-700 to-amber-900'
                     titleColor='text-white font-bold'
                     subTitleColor='text-blue-100 italic'
                 />
@@ -27,7 +27,7 @@ const UrunlerPage = () => {
                     <AllProductContent />
                 </div>
             </section>
-           
+
         </div>
     )
 }

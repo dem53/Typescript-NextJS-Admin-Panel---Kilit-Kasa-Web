@@ -5,5 +5,6 @@ export type IApiResponse <T> = {
     error?: string,
     status?: number,
     statusText?: string,
-    count?: number
+    count?: number,
+    cartUpdated?: boolean,
 }

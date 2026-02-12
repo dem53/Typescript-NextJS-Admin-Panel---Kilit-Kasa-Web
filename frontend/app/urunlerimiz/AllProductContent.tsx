@@ -93,11 +93,11 @@ export const AllProductContent = () => {
 
     return (
 
-        <section className="w-full flex flex-col mt-2 items-center mx-2 lg:mx-2 justify-center gap-2">
+        <section className="w-full flex flex-col mt-2 items-center mx-2 lg:mx-0 justify-center gap-2">
             <div className="flex w-full flex-col items-start justify-center gap-2 flex-1">
                 <input
                     type="search"
-                    className="border-2 bg-white cursor-pointer w-full text-sm quicksand border-blue-500 rounded-lg py-3 p-2"
+                    className="border-2 bg-white cursor-pointer w-full text-base quicksand border-amber-500 rounded-lg py-3 p-2"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Ürün adı, kategorisi, fiyatı, rengi, açıklaması ve ürün site ID'ye göre arama..."
@@ -111,7 +111,7 @@ export const AllProductContent = () => {
                             key={c}
                             onClick={() => setSelectedCategory(c)}
                             className={`px-2 py-1 cursor-pointer rounded-sm text-sm  font-medium transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${selectedCategory === c
-                                ? `bg-red-500 text-white shadow-md`
+                                ? `bg-amber-600 text-white shadow-md`
                                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                 }`}
                         >

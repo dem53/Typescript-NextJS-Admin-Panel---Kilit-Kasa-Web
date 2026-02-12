@@ -45,13 +45,13 @@ export interface IUpdateProduct {
     title?: string;
     subTitle?: string;
     imageUrls?: string[];
-    tags?: string[];
+    tags: string[];
     category?: string;
     color?: string;
     stock?: number;
     price?: number;
     isSelling?: boolean;
     weight?: string;
-    properties?: string[];
+    properties: string[];
     discount?: number;
 }

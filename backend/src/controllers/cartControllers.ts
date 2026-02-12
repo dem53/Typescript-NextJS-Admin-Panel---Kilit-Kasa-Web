@@ -10,12 +10,12 @@ interface IAuthRequest extends Request {
 }
 
 const findCart = async (userId?: string, sessionId?: string) => {
-  return Cart.findOne({
-    $or: [
-      ...(userId ? [{ userId }] : []),
-      ...(sessionId ? [{ sessionId }] : [])
-    ]
-  });
+    return Cart.findOne({
+        $or: [
+            ...(userId ? [{ userId }] : []),
+            ...(sessionId ? [{ sessionId }] : [])
+        ]
+    });
 };
 
 
@@ -57,7 +57,7 @@ export const getAllCart = async (req: Request, res: Response) => {
 export const getUserCart = async (req: IAuthRequest | any, res: Response) => {
     try {
 
-       const userId = req.user?._id?.toString();
+        const userId = req.user?._id?.toString();
         const sessionId = req.sessionId;
 
         if (!userId && !sessionId) {
@@ -70,17 +70,17 @@ export const getUserCart = async (req: IAuthRequest | any, res: Response) => {
         let cart;
 
         if (userId) {
-            cart = await Cart.findOne({ userId }).
-                populate({
+            cart = await Cart.findOne({ userId })
+                .populate({
                     path: 'items.product',
-                    select: 'name price imageUrls isSelling',
+                    select: 'name price imageUrls isSelling stock',
                     model: 'product'
                 });
         } else if (sessionId) {
-            cart = await Cart.findOne({ sessionId }).
-                populate({
+            cart = await Cart.findOne({ sessionId })
+                .populate({
                     path: 'items.product',
-                    select: 'name price imageUrls isSelling',
+                    select: 'name price imageUrls isSelling stock',
                     model: 'product'
                 });
         }
@@ -93,15 +93,71 @@ export const getUserCart = async (req: IAuthRequest | any, res: Response) => {
                 totalAmount: 0,
                 totalItems: 0
             });
+
+            return res.status(200).json({
+                success: true,
+                message: 'Yeni sepet oluşturuldu',
+                data: cart
+            });
         }
 
+        console.log("cart: ", cart);
+
+        let cartItems = cart.items;
+
+        let hasChanges : boolean = false;
+
+
+        const activeItems = cartItems.filter((item: any) => {
+            if (!item.product || typeof item.product !== 'object') {
+                hasChanges = true;
+                return false;
+            }
+
+            const product = item.product as any;
+
+            if (product.isSelling === false) {
+                hasChanges = true;
+                return false;
+            }
+
+            if (product.stock <= 0) {
+                hasChanges = true;
+                return false;
+            }
+
+            if (item.quantity > product.stock) {
+                item.quantity = product.stock;
+                hasChanges = true;
+            }
+
+            return true;
+        });
+
+
+        if (hasChanges) {
+
+            cart.items = activeItems;
+
+            cart.totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+            cart.totalAmount = cart.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
+            await cart.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Sepetinizde bazı ürünler güncellendi',
+                data: cart,
+                cartUpdated: true
+            });
+        }
 
         return res.status(200).json({
             success: true,
             message: 'Sepet başarıyla getirildi',
-            data: cart
+            data: cart,
+            cartUpdated: false
         });
-
 
     } catch (error) {
         console.error('Sepet getirilemedi!' + error);
@@ -113,6 +169,7 @@ export const getUserCart = async (req: IAuthRequest | any, res: Response) => {
     }
 }
 
+
 export const addToCart = async (req: IAuthRequest | any, res: Response) => {
     try {
 
@@ -122,9 +179,7 @@ export const addToCart = async (req: IAuthRequest | any, res: Response) => {
         const { productId, quantity = 1 } = req.body;
 
         console.log("PRODUCT ID : ", productId);
-
         console.log("QUANTİTY : ", quantity);
-
         console.log("REQ SESSİON : ", sessionId);
 
         if (!userId && !sessionId) {
@@ -163,7 +218,6 @@ export const addToCart = async (req: IAuthRequest | any, res: Response) => {
             });
         }
 
-
         const filter = userId
             ? { userId }
             : { sessionId };
@@ -182,8 +236,19 @@ export const addToCart = async (req: IAuthRequest | any, res: Response) => {
             { new: true, upsert: true }
         );
 
-
         const existingItem = cart.getItem(new Types.ObjectId(productId));
+        const productStock = product.stock;
+
+        const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+        const totalQuantityAfterAdd = currentQuantityInCart + quantity;
+
+
+        if (totalQuantityAfterAdd > productStock) {
+            return res.status(400).json({
+                success: false,
+                message: `Bu üründen en fazla ${productStock} adet ekleyebilirsiniz. Sepetinizde zaten ${currentQuantityInCart} adet var.`,
+            });
+        }
 
         if (existingItem) {
             existingItem.quantity += quantity;
@@ -197,6 +262,7 @@ export const addToCart = async (req: IAuthRequest | any, res: Response) => {
 
         cart.totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
         cart.totalAmount = cart.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
 
         await cart.save();
 
@@ -214,7 +280,6 @@ export const addToCart = async (req: IAuthRequest | any, res: Response) => {
         });
     }
 };
-
 
 
 export const updateCart = async (req: IAuthRequest | any, res: Response) => {

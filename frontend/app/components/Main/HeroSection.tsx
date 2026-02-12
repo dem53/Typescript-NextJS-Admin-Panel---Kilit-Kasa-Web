@@ -1,9 +1,8 @@
 "use client";
 
-import { Link } from "lucide-react";
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { useRouter } from "next/navigation";
 
 const HeroSection = () => {
 
@@ -23,7 +22,7 @@ const HeroSection = () => {
             title2: "PARMAK OKUT, KİLİT UNUT!",
             subTitle: "ALT BAŞLIK 2!",
             buttonText: "Detaylar",
-            buttonLink: "#",
+            buttonLink: "/urunlerimiz",
             image: "/images/hero-2.jpg"
         },
         {
@@ -35,7 +34,9 @@ const HeroSection = () => {
             buttonLink: "#",
             image: "/images/banner-3.jpg"
         }
-    ]
+    ];
+
+    const router = useRouter();
 
     const [active, setActive] = useState(0)
 
@@ -76,7 +77,10 @@ const HeroSection = () => {
 
                     <div className="absolute inset-0 bg-black/70"></div>
 
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="absolute z-30 inset-0 flex items-center justify-between">
+                        <button onClick={prevSlider}>
+                            <IoIosArrowBack className="text-white cursor-pointer" size={50} />
+                        </button>
                         <div className="container flex mb-0 md:mb-24 lg:mb-32 items-center justify-center mx-auto">
                             <div className="text-center  text-shadow-black  text-white text-shadow-lg  px-4 max-w-2xl">
                                 <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl  2xl:text-7xl font-bold mb-2 animate-fadeUp [animation-delay:0.1s]">
@@ -93,54 +97,53 @@ const HeroSection = () => {
 
                                 <a
                                     href={item.buttonLink}
-                                    className="inline-block bg-yellow-500 px-6 py-3 mt-6 text-xs uppercase tracking-wider rounded-sm font-bold text-white animate-fadeUp [animation-delay:0.55s]"
+                                    className="inline-block bg-yellow-500 cursor-pointer px-6 py-3 mt-6 text-xs uppercase tracking-wider rounded-sm font-bold text-white animate-fadeUp [animation-delay:0.55s]"
                                 >
                                     {item.buttonText}
                                 </a>
 
                             </div>
+
                         </div>
-
-                    </div>
-
-                    <div className="absolute inset-0 flex items-center justify-between px-0 z-20">
-                        <button onClick={prevSlider}>
-                            <IoIosArrowBack className="text-white cursor-pointer" size={50} />
-                        </button>
 
                         <button onClick={nextSlider}>
                             <IoIosArrowForward className="text-white cursor-pointer" size={50} />
                         </button>
-                    </div>
 
 
-                    <div className="absolute bottom-4 md:bottom-28 lg:bottom-34 left-1/2 -translate-x-1/2 flex gap-3 z-20">
-                        {banners.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setActive(index)}
-                                className={`w-3 h-2 rounded-full  transition ${index === active ? "bg-yellow-500" : "bg-white/40"}`}
-                            />
-                        ))}
-                    </div>
-                    <div className="w-full hidden md:block absolute bottom-0 py-5 z-50 lg:py-8 bg-linear-to-t from-gray-950 to-gray-500/30">
-                        <div className="container px-4 mx-auto">
-                            <div className="flex items-center justify-between">
-                                <span>
-                                    <h2 className="tracking-wider font-semibold text-sm lg:text-lg text-white text-shadow-sm text-shadow-black">Elektronik kilit ve kasa tamirleri için iletişime geçin</h2>
-                                </span>
-
-                                <span>
-                                    <button
-                                        type="button"
-                                        className="border-2 rounded-xl cursor-pointer  duration-300 ease-in-out transition-all p-2 hover:bg-yellow-500 bg-yellow-600 border-hidden text-white text-shadow-black text-shadow-sm tracking-wider text-sm px-4 py-2.5 font-extrabold"
-                                    >
-                                        <h2>İletişime Geç</h2>
-                                    </button>
-                                </span>
-                            </div>
+                        <div className="absolute bottom-4 cursor-pointer md:bottom-28 lg:bottom-34 z-30 left-1/2 -translate-x-1/2 flex gap-3 ">
+                            {banners.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setActive(index)}
+                                    className={`w-4 h-2 rounded-full cursor-pointer  transition ${index === active ? "bg-yellow-500" : "bg-white/40"}`}
+                                />
+                            ))}
                         </div>
 
+
+                        <div className="w-full hidden md:block absolute bottom-0 py-5 z-50 lg:py-8 bg-linear-to-t from-gray-950 to-gray-500/30">
+                            <div className="container px-4 mx-auto">
+                                <div className="flex items-center justify-between">
+                                    <span>
+                                        <h2 className="tracking-wider font-semibold text-sm lg:text-lg text-white text-shadow-sm text-shadow-black">Elektronik kilit ve kasa tamirleri için iletişime geçin</h2>
+                                    </span>
+
+                                    <span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                router.push('/iletisim')
+                                            }}
+                                            className="border-2 rounded-xl cursor-pointer  duration-300 ease-in-out transition-all p-2 hover:bg-yellow-500 bg-yellow-600 border-hidden text-white text-shadow-black text-shadow-sm tracking-wider text-sm px-4 py-2.5 font-extrabold"
+                                        >
+                                            <h2>İletişime Geç</h2>
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             ))}

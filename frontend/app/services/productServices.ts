@@ -33,17 +33,9 @@ export const productServices = {
 
     async createProduct(formData: FormData) {
 
-        const token = localStorage.getItem('authToken');
-
-        if (!token) {
-            throw new Error('Kullanıcı Tokeni bulunamadı! Lütfen giriş yapınız!');
-        }
-
         const response = await fetch(`http://localhost:8000/api/create/product`, {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${token}`
-            },
+            credentials: 'include',
             body: formData
         });
 
@@ -66,17 +58,10 @@ export const productServices = {
 
 
     async updateProduct(id: string, formData: FormData) {
-        const token = localStorage.getItem('authToken');
-
-        if (!token) {
-            throw new Error('Token bulunamadı! Lütfen giriş yapınız!');
-        }
-
+     
         const response = await fetch(`http://localhost:8000/api/update/product/${id}`, {
             method: "PUT",
-            headers: {
-                "Authorization": `Bearer ${token}`
-            },
+            credentials: 'include',
             body: formData
         });
 

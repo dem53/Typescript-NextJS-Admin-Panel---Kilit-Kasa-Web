@@ -51,6 +51,6 @@ export interface IUpdateProduct {
     price?: number;
     isSelling?: boolean;
     weight?: string;
-    properties?: string[];
+    properties: string[];
     discount?: number;
 }

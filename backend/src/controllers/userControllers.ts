@@ -71,9 +71,9 @@ export const getAllUser = async (req: Request, res: Response, next: NextFunction
 
 export const createUser = async (req: Request | any, res: Response, next: NextFunction) => {
     try {
-        const { firstName, lastName, email, username, password, isAdmin }: ICreateUser = req.body;
+        const { firstName, lastName, email, username, password, isAdmin = false, role }: ICreateUser = req.body;
 
-        if (!firstName || !lastName || !email || !username || !password) {
+        if (!firstName || !lastName || !email || !username || !password || !role ) {
             return res.status(404).json({
                 success: false,
                 message: 'Tüm zorunlu alanların doldurulması gereklidir!'
@@ -94,7 +94,18 @@ export const createUser = async (req: Request | any, res: Response, next: NextFu
             });
         }
 
+        const validRoles = ['admin', 'personel', 'manager', 'customer'];
+
+        if (!validRoles.includes(role)){
+            return res.status(400).json({
+                success: false,
+                message: 'Kullancı rolü beklenilen değerde değil!'
+            })
+        }
+
         const passwordHashed = await bcrypt.hash(password, 12);
+
+        let userRole = 'customer';
 
         const createUser = await User.create({
             firstName,
@@ -102,7 +113,8 @@ export const createUser = async (req: Request | any, res: Response, next: NextFu
             email,
             username,
             isAdmin,
-            password: passwordHashed
+            password: passwordHashed,
+            role: userRole
         });
 
         return res.status(201).json({
