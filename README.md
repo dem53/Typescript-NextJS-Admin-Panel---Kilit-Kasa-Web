@@ -14,8 +14,8 @@ kullanıcı rollerine göre yetkilendirmeler değişebilir. (iş takibi, sipari�
 - **`backend/`**: REST API, auth, sepet ve sipariş işlemleri
   - `src/server.ts` – Express sunucu başlangıç dosyası
   - `src/config/dataBase.ts` – MongoDB bağlantı ayarları
-  - `src/models/` – Mongoose modelleri (`User`, `Product`, `Cart`, `Order` vb.)
-  - `src/controllers/` – İş mantığı (`cartControllers`, `orderControllers` vb.)
+  - `src/models/` – Mongoose modelleri (`User`, `Product`, `Cart`, `Order`, `Job` vb.)
+  - `src/controllers/` – İş mantığı (`cartControllers`, `orderControllers`, `jobControllers` vb.)
   - `src/routes/` – Express route tanımları
   - `src/middleware/` – Auth ve diğer middleware'ler
 
@@ -53,12 +53,14 @@ Backend için `backend/.env` dosyasında en az şu değişkenler tanımlanmalıd
 ```env
 MONGO_LOCAL_URI=mongodb://localhost:27017/webgelistirme
 JWT_SECRET=super-secret-key
+PORT=8000
+NODE_ENV= production veya development `Geliştirme ve Sunucuda çalışım ayrım yapmak için`
 ```
 
 Frontend için isteğe bağlı olarak `.env.local` içinde backend URL’si vb. tanımlanabilir:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
 (Port ve path, senin backend konfigürasyona göre değişebilir.)
@@ -101,6 +103,8 @@ npm run build
 # Prod server
 npm start
 ```
+
+Backend sunucusu port `8000` üzerinde çalışmaktadır. .env'de PORT tanımlayabilirsiniz.
 
 Varsayılan olarak Next.js uygulaması `http://localhost:3000` üzerinde çalışır.
 
