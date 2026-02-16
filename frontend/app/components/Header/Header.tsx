@@ -28,12 +28,7 @@ const Header = () => {
 
     return (
         <>
-            <div className={`
-          fixed top-0 left-0 w-full z-30
-          bg-linear-to-r from-amber-800 to-amber-600 text-white text-xs raleway
-          transition-all duration-300 ease-linear
-          ${showTopHeaderInfo ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full"}
-        `}
+            <div className={`fixed top-0 left-0 w-full z-30 bg-linear-to-r from-amber-800 to-amber-600 text-white text-xs raleway transition-all duration-300 ease-linear ${showTopHeaderInfo ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full"}`}
             >
                 <div className="w-full xl:container mx-auto py-2 flex items-center justify-between px-4">
                     <span className="tracking-wide flex items-center justify-center gap-2">

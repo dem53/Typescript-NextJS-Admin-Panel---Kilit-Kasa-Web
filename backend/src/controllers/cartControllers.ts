@@ -101,12 +101,10 @@ export const getUserCart = async (req: IAuthRequest | any, res: Response) => {
             });
         }
 
-        console.log("cart: ", cart);
 
         let cartItems = cart.items;
 
         let hasChanges : boolean = false;
-
 
         const activeItems = cartItems.filter((item: any) => {
             if (!item.product || typeof item.product !== 'object') {
@@ -177,10 +175,6 @@ export const addToCart = async (req: IAuthRequest | any, res: Response) => {
         const sessionId = req.sessionId;
 
         const { productId, quantity = 1 } = req.body;
-
-        console.log("PRODUCT ID : ", productId);
-        console.log("QUANTİTY : ", quantity);
-        console.log("REQ SESSİON : ", sessionId);
 
         if (!userId && !sessionId) {
             return res.status(404).json({

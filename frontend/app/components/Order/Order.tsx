@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, JSX } from "react";
 import { IOrder } from "@/app/types/orderTypes";
 import { orderServices } from "@/app/services/orderServices";
-import { FaCheck, FaShippingFast, FaUserCircle, FaEdit, FaBoxOpen, FaMoneyBillWave, FaCreditCard, FaStore } from "react-icons/fa";
+import { FaCheck, FaShippingFast, FaUserCircle, FaEdit, FaBoxOpen, FaMoneyBillWave, FaCreditCard, FaStore, FaInfo, FaExclamationTriangle } from "react-icons/fa";
 import { formatDate } from "@/app/utils/format";
 import OrderStatusUpdate from "./OrderStatusUpdate";
 import { MdCancel, MdPending, MdRefresh, MdShoppingCart, MdDateRange, MdPayment } from "react-icons/md";
@@ -14,6 +14,8 @@ import { TbTruckDelivery } from "react-icons/tb";
 import { FaSearch, FaReceipt } from "react-icons/fa";
 import { BsCalendar3, BsGlobe } from "react-icons/bs";
 import { BiSolidPackage } from "react-icons/bi";
+import { InfoBox } from "../general/InfoBox";
+import ConfirmBox from "../general/ConfirmBox";
 
 export const Order = () => {
 
@@ -21,7 +23,7 @@ export const Order = () => {
 
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [message, setMessage] = useState<string | null>("");
+    const [message, setMessage] = useState<string>("");
     const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
     const [selectedOrderID, setSelectedOrderID] = useState<string | null>(null);
     const [showOrderDetail, setShowOrderDetail] = useState<boolean>(false);
@@ -37,6 +39,9 @@ export const Order = () => {
     const [itemsPerPage, setItemsPerPage] = useState<number>(5);
 
     const [showOrderStatusModal, setShowOrderStatusModal] = useState<boolean>(false);
+    const [showConfirmBox, setShowConfirmBox] = useState<boolean>(false);
+    const [showInfoBox, setShowInfoBox] = useState<boolean>(false);
+    const [infoBoxType, setInfoBoxType] = useState<'warning' | 'info' | 'success' | 'error'>('info');
 
     const fetchOrderData = async (): Promise<void> => {
         setLoading(true);
@@ -63,7 +68,6 @@ export const Order = () => {
         }
     }
 
-
     const orderTypeStatus = (type: string) => {
         switch (type) {
             case 'shop':
@@ -85,16 +89,16 @@ export const Order = () => {
         }
     }
 
-  
 
-    const orderStatus: Record<string, JSX.Element> = {
-        pending: <MdPending className='text-yellow-500' size={25} />,
-        cancelled: <MdCancel className='text-red-700' size={25} />,
-        failed: <FcCancel className='text-red-500' size={25} />,
-        success: <FaCheck className='text-emerald-500' size={20} />,
-        ready: <GoPackageDependencies className='text-yellow-600' size={20} />,
-        shipped: <TbTruckDelivery className='text-blue-500' size={23} />,
+    const getTypeInfo = () => {
+        switch (infoBoxType) {
+            case 'info': return <FaInfo className="text-blue-500" size={30} />
+            case 'success': return <FaCheck className="text-emerald-500" size={30} />
+            case 'warning': return <FaExclamationTriangle className="text-yellow-500" size={30} />;
+            case 'error': return <FaExclamationTriangle className="text-red-500" size={30} />;
+        }
     }
+
 
 
     const paymentStatus: Record<string, JSX.Element> = {
@@ -107,6 +111,12 @@ export const Order = () => {
 
     useEffect(() => {
         fetchOrderData();
+
+        const interval = setInterval(() => {
+            fetchOrderData();
+        }, 60000);
+
+        return () => clearInterval(interval);
     }, []);
 
 
@@ -163,8 +173,8 @@ export const Order = () => {
     const paymentList = ['all', ...Array.from(new Set(orderData.map((order) => order.paymentStatus)))];
 
     const orderStatusText = (status: string) => {
-        switch(status){
-            case 'all': 
+        switch (status) {
+            case 'all':
                 return 'Tüm Durumlar';
             case 'pending':
                 return 'Beklemede';
@@ -174,7 +184,7 @@ export const Order = () => {
                 return 'Teslimatta';
             case 'success':
                 return 'Onaylandı';
-            case 'failed': 
+            case 'failed':
                 return 'Reddedildi';
             case 'cancelled':
                 return 'İptal Edildi';
@@ -182,16 +192,15 @@ export const Order = () => {
     }
 
 
-
     const orderPaymentStatusText = (status: string) => {
-        switch(status){
-            case 'all': 
+        switch (status) {
+            case 'all':
                 return 'Tüm Durumlar';
             case 'pending':
                 return 'Beklemede';
             case 'success':
                 return 'Onaylandı';
-            case 'failed': 
+            case 'failed':
                 return 'Reddedildi';
             case 'cancelled':
                 return 'İptal Edildi';
@@ -219,7 +228,7 @@ export const Order = () => {
     }, [filteredOrder, currentPage, itemsPerPage]);
 
     const getOrderStatusBadge = (status: string) => {
-        switch(status) {
+        switch (status) {
             case 'success':
                 return 'bg-gradient-to-r from-green-500 to-green-600 text-white';
             case 'pending':
@@ -237,13 +246,19 @@ export const Order = () => {
         }
     }
 
+    const getTurkishLira = (price: number) => {
+        return price.toLocaleString('tr-TR', {
+            style: "currency",
+            currency: 'TRY'
+        })
+    }
+
 
     return (
 
         <>
             <div className="bg-gray-50 min-h-screen">
-                
-                {/* Header Section */}
+
                 <div className="bg-white rounded-xl shadow-md p-3 mb-4">
                     <div className="flex items-center gap-4 mb-6">
                         <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg">
@@ -255,7 +270,7 @@ export const Order = () => {
                         </div>
                     </div>
 
-                    {/* Stats */}
+
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
                             <div className="flex items-center justify-between">
@@ -321,7 +336,6 @@ export const Order = () => {
                         </div>
                     </div>
 
-                    {/* Filters Row */}
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-medium text-gray-700">Sipariş Durumu</label>
@@ -508,8 +522,8 @@ export const Order = () => {
                                     </tr>
                                 ) : paginatedOrders.length > 0 ? (
                                     paginatedOrders.map((order: IOrder, index: number) => (
-                                        <tr 
-                                            className="hover:bg-orange-50 transition-colors duration-150" 
+                                        <tr
+                                            className="hover:bg-orange-50 cursor-pointer transition-colors duration-150"
                                             key={`${order._id}-${index}`}
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -529,7 +543,7 @@ export const Order = () => {
                                                             />
                                                             <div className="flex flex-col gap-1">
                                                                 <span className="text-xs font-semibold text-gray-900">
-                                                                    {item.product.name} 
+                                                                    {item.product.name}
                                                                     <span className="text-orange-600 ml-1">(x{item.quantity})</span>
                                                                 </span>
                                                                 <span className="text-xs text-gray-600">
@@ -542,7 +556,7 @@ export const Order = () => {
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <button 
+                                                <button
                                                     onClick={() => handleOrderDetail(order)}
                                                     className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
                                                     title="Müşteri Bilgileri"
@@ -552,30 +566,26 @@ export const Order = () => {
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                {order.items.map((item, idx) => (
-                                                    <span key={idx} className="inline-flex items-center gap-1 bg-green-500 px-3 py-1.5 rounded-lg text-white font-bold text-sm shadow-md">
-                                                        {item.totalPrice.toFixed(2)} ₺
-                                                    </span>
-                                                ))}
+                                               <span className="bg-emerald-500 rounded-md px-2 py-1 font-semibold text-white">
+                                                 {getTurkishLira(order.subTotal)}
+                                                </span> 
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md ${
-                                                    order.orderType === 'shop' 
-                                                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' 
-                                                        : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                                                }`}>
+                                                <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md ${order.orderType === 'shop'
+                                                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+                                                    : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                                                    }`}>
                                                     {order.orderType === 'shop' ? <FaStore size={12} /> : <BsGlobe size={12} />}
                                                     {orderTypeStatus(order.orderType)}
                                                 </span>
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md ${
-                                                    order.paymentType === 'cash' 
-                                                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' 
-                                                        : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                                                }`}>
+                                                <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md ${order.paymentType === 'cash'
+                                                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                                    : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                                                    }`}>
                                                     {order.paymentType === 'cash' ? <FaMoneyBillWave size={12} /> : <FaCreditCard size={12} />}
                                                     {paymentTypeStatus(order.paymentType)}
                                                 </span>
@@ -601,15 +611,25 @@ export const Order = () => {
                                                 </span>
                                             </td>
 
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <button
-                                                    type="button"
-                                                    disabled={loading}
-                                                    onClick={() => handleOrderUpdateStatus(order)}
-                                                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                                >
-                                                    <FaEdit size={14} />
-                                                </button>
+                                            <td className="px-6 py-4 gap-2 whitespace-nowrap text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span>
+                                                 
+                                                    </span>
+
+                                                    <span>
+                                                        <button
+                                                            type="button"
+                                                            disabled={loading}
+                                                            onClick={() => handleOrderUpdateStatus(order)}
+                                                            className="bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                        >
+                                                            <FaEdit size={14} />
+                                                        </button>
+                                                    </span>
+                                                </div>
+
+
                                             </td>
                                         </tr>
                                     ))
@@ -650,12 +670,12 @@ export const Order = () => {
                                     <FaUserCircle size={32} />
                                     <h2 className="text-2xl font-bold">Müşteri Bilgileri</h2>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => {
                                         setShowOrderDetail(false);
                                         setSelectedOrder(null);
-                                    }} 
-                                    className="bg-white/20 hover:bg-white/30 rounded-lg px-4 py-2 font-bold text-lg transition-colors duration-200"
+                                    }}
+                                    className="bg-white/20 cursor-pointer hover:bg-white/30 rounded-lg px-4 py-2 font-bold text-lg transition-colors duration-200"
                                 >
                                     ✕
                                 </button>
@@ -726,6 +746,21 @@ export const Order = () => {
                     id={selectedOrderID}
                 />
             )}
+
+
+            {showInfoBox && (
+                <InfoBox
+                    title={message || error || ''}
+                    isOpen={showInfoBox}
+                    onClose={() => {
+                        setShowInfoBox(false);
+                        setError(null);
+                        setMessage("");
+                    }}
+                    icon={getTypeInfo()}
+                />
+            )}
+
         </>
     )
 }

@@ -2,17 +2,27 @@ import { IApiResponse } from "../types/apiResponseType";
 
 
 const getSessionId = (): string => {
-    if (typeof window !== "undefined") {
-        let sessionId = localStorage.getItem("sessionId");
-        if (!sessionId) {
-            sessionId = crypto.randomUUID();
-            localStorage.setItem("sessionId", sessionId);
-        }
-        return sessionId;
+    if (typeof window === "undefined") {
+        return "";
     }
-    return "";
-};
 
+    let sessionId = localStorage.getItem("sessionId");
+    if (!sessionId) {
+        const prefix = "SES";
+        const characters = "ABCDEFGHJKLMNOPRSTUVYZ0123456789";
+        let randomPart = "";
+
+        for (let i = 0; i < 24; i++) {
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            randomPart += characters.charAt(randomIndex);
+        }
+
+        sessionId = `${prefix}${randomPart}`;
+        localStorage.setItem("sessionId", sessionId);
+    }
+
+    return sessionId;
+};
 
 export const apiFetch = async<T>(url: string, options?: RequestInit): Promise<IApiResponse<T>> => {
 
@@ -35,7 +45,7 @@ export const apiFetch = async<T>(url: string, options?: RequestInit): Promise<IA
 
 
 export const apiAuthFetch = async <T>(url: string, options?: RequestInit): Promise<IApiResponse<T>> => {
-    
+
     const response = await fetch(`http://localhost:8000/api/${url}`, {
         ...options,
         headers: {

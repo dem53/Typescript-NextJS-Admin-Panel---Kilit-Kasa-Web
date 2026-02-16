@@ -10,26 +10,22 @@ const cartItemSchema = new Schema<ICartItem>({
     quantity: {
         type: Number,
         required: true,
-        trim: true,
         min: 1
     },
     price: {
         type: Number,
         required: true,
-        trim: true,
-        min: 1
+        min: 0
     },
     discount: {
         type: Number,
         required: false,
-        trim: true,
         min: 0,
         default: 0
     },
     discountedPrice: {
         type: Number,
         required: false,
-        trim: true,
         min: 0,
         default: 0
     }
@@ -43,29 +39,29 @@ const cartSchema = new Schema<ICart>({
         type: Schema.Types.ObjectId,
         ref: 'user',
         required: false,
-        unique: true,
-        trim: true,
+        default: null,
         sparse: true
     },
     sessionId: {
         type: String,
         required: false,
+        default: null,
         sparse: true,
-        trim: true,
-        lowercase: true
+        trim: true
     },
-    items: [cartItemSchema],
+    items: {
+        type: [cartItemSchema],
+        default: []
+    },
     totalAmount: {
         type: Number,
         required: false,
-        trim: true,
         default: 0,
         min: 0
     },
     totalItems: {
         type: Number,
         required: false,
-        trim: true,
         default: 0,
         min: 0
     }
@@ -77,23 +73,29 @@ const cartSchema = new Schema<ICart>({
 
 cartSchema.index({ 'items.product': 1 });
 
-cartSchema.index(
-    { userId: 1 },
-    { unique: true, partialFilterExpression: { userId: { $exists: true, $ne: null } } }
-);
-
-cartSchema.index(
-  { sessionId: 1 },
-  { unique: true, partialFilterExpression: { sessionId: { $exists: true, $ne: null } } }
-);
-
-cartSchema.pre('save', function () {
-    if (this.sessionId === null || this.sessionId === undefined || this.sessionId === '') {
-        delete this.sessionId;
+cartSchema.index({ userId: 1, sessionId: 1 }, {
+    unique: true,
+    sparse: true,
+    partialFilterExpression: {
+        $or: [
+            { userId: { $type: 'objectId' } },
+            { sessionId: { $type: 'string' } }
+        ]
     }
 });
 
-cartSchema.methods.getItem = function ( productId: Types.ObjectId): ICartItem | undefined {
+cartSchema.pre('save', function (next) {
+    if (this.sessionId === null || this.sessionId === undefined || this.sessionId === '') {
+        this.sessionId = undefined;
+    }
+    
+    if (this.userId === null || this.userId === undefined) {
+        this.userId = undefined;
+    }
+    
+});
+
+cartSchema.methods.getItem = function (productId: Types.ObjectId): ICartItem | undefined {
     return this.items.find((item: ICartItem) =>
         item.product.toString() === productId.toString()
     );

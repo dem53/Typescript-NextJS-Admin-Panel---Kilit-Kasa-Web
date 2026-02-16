@@ -4,12 +4,13 @@ interface IConfirmBoxProps {
     isOpen: boolean;
     message: string;
     secondMessage?: string;
+    info?: string;
     onSuccess: () => void;
     onClose: () => void
 }
 
 export const ConfirmBox: React.FC<IConfirmBoxProps> = ({
-    isOpen, message, secondMessage, onSuccess, onClose
+    isOpen, message, secondMessage, info, onSuccess, onClose
 }) => {
 
     if (!isOpen) return null;
@@ -22,8 +23,13 @@ export const ConfirmBox: React.FC<IConfirmBoxProps> = ({
                     {message}
                 </div>
                 {secondMessage ? (
-                    <div className="flex text-xs text-yellow-600 font-bold items-center justify-center text-center">
+                    <div className="flex text-xs text-red-600 font-bold items-center justify-center text-center">
                         {secondMessage}
+                    </div>
+                ) : null}
+                {info ? (
+                    <div className="flex text-xs text-black font-bold items-center justify-center text-center">
+                        {info}
                     </div>
                 ) : null}
                 <div className="flex items-center mt-3 text-sm justify-center gap-4">

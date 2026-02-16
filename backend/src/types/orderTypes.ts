@@ -85,7 +85,10 @@ export enum OrderStatus {
  }
 
 
- export interface IUpdateStatusOrder {
+ export interface IUpdateOrder {
+   customerInfo?: ICustomerInfo,
+   paymentType?: PaymentType,
+   orderType?: OrderType,
    paymentStatus?: PaymentStatus | undefined;
    orderStatus?: OrderStatus | undefined;
  }

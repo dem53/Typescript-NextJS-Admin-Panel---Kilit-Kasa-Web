@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { ICreateOrder, IUpdateStatusOrder, OrderStatus, PaymentStatus } from "../types/orderTypes";
+import { ICreateOrder, IUpdateOrder, OrderStatus, PaymentStatus } from "../types/orderTypes";
 import Cart from "../models/Cart";
 import Order from "../models/Order";
-import { Types } from "mongoose";
+import Product from "../models/Product";
 
 
 
@@ -44,12 +44,13 @@ export const createOrder = async (req: Request | any, res: Response, next: NextF
 
         const { customerInfo, paymentType, orderType }: ICreateOrder = req.body;
 
+
         if (!userId && !sessionId) {
             return res.status(401).json({
                 success: false,
                 message: 'Kullanıcı veya Misafir ID bulunamadı!'
             });
-        };
+        }
 
         if (!customerInfo) {
             return res.status(404).json({
@@ -159,14 +160,28 @@ export const createOrder = async (req: Request | any, res: Response, next: NextF
 
         await newOrder.save();
 
-        await Cart.findOneAndUpdate(
+    
+        const clearResult = await Cart.findOneAndUpdate(
             {
                 $or: [
-                    { userId, sessionId }
+                    { userId: userId },
+                    { sessionId: sessionId }
                 ]
             },
-            { items: [], totalAmount: 0, totalItems: 0 }
+            { 
+                $set: {
+                    items: [], 
+                    totalAmount: 0, 
+                    totalItems: 0 
+                }
+            },
+            { new: true, runValidators: true }
         );
+
+
+        if (!clearResult) {
+            console.warn("UYARI: Sepet temizlenemedi - sepet bulunamadı!");
+        }
 
         return res.status(201).json({
             success: true,
@@ -176,6 +191,7 @@ export const createOrder = async (req: Request | any, res: Response, next: NextF
 
 
     } catch (error) {
+        console.error("Sipariş oluşturma hatası:", error);
         return res.status(500).json({
             success: false,
             message: 'Sipariş oluşturulurken hata meydana geldi',
@@ -185,15 +201,12 @@ export const createOrder = async (req: Request | any, res: Response, next: NextF
 }
 
 
-
 export const updateOrder = async (req: Request, res: Response, next: NextFunction) => {
     try {
 
         const { id } = req.params;
 
-        console.log("ORDER ID : ", req.params);
-
-        const { paymentStatus, orderStatus }: IUpdateStatusOrder = req.body;
+        const { customerInfo, paymentType, orderType, paymentStatus, orderStatus } : IUpdateOrder = req.body;
 
 
         if (!id) {
@@ -204,14 +217,15 @@ export const updateOrder = async (req: Request, res: Response, next: NextFunctio
         }
 
 
-        if (!paymentStatus || !orderStatus) {
+        if (!customerInfo || !paymentType || !orderType || !paymentStatus || !orderStatus) {
             return res.status(404).json({
                 success: false,
                 message: 'Sipariş durumu veya ödeme durumu bulunamadı!'
             });
         }
 
-
+        const validOrderTypes = ['online', 'shop'];
+        const validPaymentTypes = ['cash', 'credit_card'];
         const validOrderStatus = ['pending', 'success', 'failed', 'cancelled', 'ready', 'shipped'];
         const validPaymentStatus = ['pending', 'success', 'failed', 'cancelled'];
 
@@ -229,10 +243,31 @@ export const updateOrder = async (req: Request, res: Response, next: NextFunctio
             });
         }
 
+        if(!validOrderTypes.includes(orderType)){
+            return res.status(400).json({
+                success: false,
+                message: 'Sipariş tipi beklenilen değerde değil!'
+            });
+        }
+
+        if(!validPaymentTypes.includes(paymentType)){
+            return res.status(400).json({
+                success: false,
+                message: 'Sipariş ödeme tipi beklenilen değerde değil!'
+            });
+        }
+
+
+        let customer = customerInfo;
+
+        if(!customer.name || !customer.phone || !customer.email || !customer.city || !customer.district || !customer.deliveryAddress || !customer.surname){
+            return res.status(400).json({
+                success: false,
+                message: 'Sipariş irtibat bilgileri boş bırakılamaz !'
+            })
+        }
 
         const updateOrder = await Order.findById(id);
-
-        console.log("UPDATE ORDER :" , updateOrder);
 
         if (!updateOrder) {
             return res.status(404).json({
@@ -251,9 +286,28 @@ export const updateOrder = async (req: Request, res: Response, next: NextFunctio
                 updateOrder.orderStatus = orderStatus;
             }
 
+            if (orderType){
+                updateOrder.orderType = orderType;
+            }
+
+            if (paymentType){
+                updateOrder.paymentType = paymentType;
+            }
+
+            if (customerInfo){
+                updateOrder.customerInfo.deliveryAddress = customer.deliveryAddress;
+                updateOrder.customerInfo.city = customer.city;
+                updateOrder.customerInfo.district = customer.district;
+                updateOrder.customerInfo.email = customer.email;
+                updateOrder.customerInfo.surname = customer.surname;
+                updateOrder.customerInfo.phone = customer.phone;
+                updateOrder.customerInfo.phone2 = customer.phone2;
+                updateOrder.customerInfo.invoiceAddress = customer.invoiceAddress;
+                updateOrder.customerInfo.name = customer.name;
+            }
+
             await updateOrder.save();
         }
-
 
         return res.status(200).json({
             success: true,
@@ -275,7 +329,7 @@ export const updateOrder = async (req: Request, res: Response, next: NextFunctio
 
 export const deleteOrder = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        
+
         const { id } = req.params;
 
         if (!id) {
@@ -286,8 +340,8 @@ export const deleteOrder = async (req: Request, res: Response, next: NextFunctio
         }
 
         const deleteOrder = await Order.findByIdAndDelete(id);
-        
-        if (!deleteOrder){
+
+        if (!deleteOrder) {
             return res.status(404).json({
                 success: false,
                 message: 'Silinecek Sipariş Bulunamadı!!'
@@ -300,7 +354,7 @@ export const deleteOrder = async (req: Request, res: Response, next: NextFunctio
             data: deleteOrder
         });
 
-    } catch (error : any) {
+    } catch (error: any) {
         console.error('Sipariş silinirken hata meydana geldi!' + error.message);
         return res.status(500).json({
             success: false,
@@ -309,3 +363,102 @@ export const deleteOrder = async (req: Request, res: Response, next: NextFunctio
         });
     }
 }
+
+
+export const approveOrder = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Onaylanacak sipariş ID bulunamadı!'
+            });
+        }
+
+        const order = await Order.findById(id);
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Sipariş bulunamadı!'
+            });
+        }
+
+        if (order.orderStatus === OrderStatus.SUCCESS) {
+            return res.status(400).json({
+                success: false,
+                message: 'Sipariş zaten onaylanmış!'
+            });
+        }
+
+        if (order.orderStatus === OrderStatus.CANCELLED) {
+            return res.status(400).json({
+                success: false,
+                message: 'İptal edilmiş sipariş onaylanamaz!'
+            });
+        }
+
+        const orderItems = order.items;
+
+        for (const item of orderItems) {
+
+            const productId = item.product._id;
+            const productName = item.product.name;
+
+            const product = await Product.findById(productId).select('_id stock imageUrls name color price');
+
+
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: `Ürün bulunamadı! ${productName} - ${productId}`
+                });
+            }
+
+            if (product.stock < item.quantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Yetersiz stok: ${productName}. Mevcut: ${product.stock}, İstenen: ${item.quantity}`
+                });
+            }
+        }
+
+   
+        for (const item of orderItems) {
+
+            const productId = item.product._id;
+
+            const updatedProduct = await Product.findByIdAndUpdate(
+                productId,
+                { $inc: { stock: -item.quantity } },
+                { new: true }
+            );
+
+            console.log(`Ürün ${productId} için stok güncellendi. Yeni stok: ${updatedProduct?.stock}`);
+        }
+
+        order.orderStatus = OrderStatus.SUCCESS; 
+        order.paymentStatus = PaymentStatus.SUCCESS; 
+        
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Sipariş Başarıyla Onaylandı ve Stok Düşüldü!',
+            data: order
+        });
+
+
+    } catch (error: any) {
+        console.error('Sipariş onaylama hatası:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Sipariş onaylanırken hata meydana geldi',
+            error: error instanceof Error ? error.message : 'Bilinmeyen Kaynaklı Hata!'
+        });
+    }
+}
+

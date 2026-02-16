@@ -64,7 +64,7 @@ const CustomerInfo = new Schema<ICustomerInfo>({
     },
     phone2: {
         type: String,
-        required: true,
+        required: false,
         maxLength: 11,
         minLength: 11,
         trim: true
@@ -176,7 +176,7 @@ const OrderSchema = new Schema<IOrder>({
 });
 
 OrderSchema.index({ orderNumber: 1 }, { unique: true });
-OrderSchema.index({ sesionId: 1 });
+OrderSchema.index({ sessionId: 1 });
 OrderSchema.index({ userId: 1 });
 
 
@@ -207,7 +207,7 @@ OrderSchema.statics.generateOrderNumber = async function (): Promise<string> {
         const existingOrder = await this.findOne({ orderNumber });
         if (!existingOrder) {
             isUnique = true;
-        }
+        } 
     }
 
     return orderNumber as string

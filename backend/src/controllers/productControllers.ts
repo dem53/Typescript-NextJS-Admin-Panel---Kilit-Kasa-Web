@@ -274,9 +274,6 @@ export const updateProduct = async (req: Request | any, res: Response) => {
             deletedImages
         }: IUpdateProduct & { deletedImages?: string[] } = req.body;
 
-        console.log("REQUEST BODY :", req.body);
-
-        console.log("DELETE IMAGES : ", deletedImages);
 
         const updateProduct: Partial<IUpdateProduct> = {};
 

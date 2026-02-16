@@ -1,6 +1,5 @@
 "use client";
 
-import { cartServices } from "@/app/services/cartServices";
 import { orderServices } from "@/app/services/orderServices";
 import { ICart } from "@/app/types/cartTypes";
 import { ICreateOrder, OrderType, PaymentType } from "@/app/types/orderTypes";
@@ -10,7 +9,8 @@ import { useEffect, useState } from "react";
 interface IOrderCreateFormProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void
+    onSuccess: () => void;
+    cartData: ICart;
 }
 
 interface ICity {
@@ -25,8 +25,7 @@ interface IDistrict {
 }
 
 
-
-export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClose, onSuccess }) => {
+export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClose, onSuccess, cartData }) => {
 
     if (!isOpen) return null;
 
@@ -46,15 +45,12 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
         paymentType: PaymentType.CASH
     });
 
-    const [cartData, setCartData] = useState<ICart | null>(null);
-
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>('');
 
     const [city, setCity] = useState<ICity[]>([]);
     const [district, setDistrict] = useState<IDistrict[]>([]);
-
 
     const [addressCheck, setAddressCheck] = useState<boolean>(true);
 
@@ -77,9 +73,10 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
 
         } catch (error: any) {
             setError('hata!' + error.message);
+        } finally {
+            setLoading(false);
         }
     }
-
 
     const fetchDistrict = async (): Promise<void> => {
 
@@ -103,6 +100,8 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
 
             } catch (error: any) {
                 setError('İlçe verileri getirilemedi' + error.message);
+            } finally {
+                setLoading(false);
             }
         } else {
             setDistrict([]);
@@ -118,29 +117,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
         fetchDistrict();
     }, [createOrderData.customerInfo.city])
 
-
-    const fetchCart = async () => {
-        setLoading(true);
-        setMessage("");
-        setError(null);
-        try {
-            const response = await cartServices.getCartSession();
-            if (response && response.data) {
-                setCartData(response.data);
-                setMessage(response.message ? response.message : 'Kullanıcı Sepeti Başarıyla getirildi');
-            } else {
-                setError(response.error || response.message || 'Kullanıcı sepeti getirilemedi!')
-            }
-        } catch (error) {
-            setError('Kullanıcı sepeti getirilirken hata ile karşılaşıldı!' + error);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    useEffect(() => {
-        fetchCart();
-    }, []);
 
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -180,79 +156,78 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
     }
 
 
-    if (!cartData || !cartData.items || cartData.items.length === 0) {
-        return (
-            <div>
-                <h2>Sepetiniz Boş! Sepetinizde ürün bulunmamaktadır!</h2>
-            </div>
-        )
-    }
-
-
     const handleSubmit = async (e: React.FormEvent) => {
 
         e.preventDefault();
-        setLoading(true);
-        setError(null);
-        setMessage('');
-
 
         if (!cartData || !cartData.items || cartData.items.length === 0) {
             setError('Sepetinizde ürün bulunmamaktadır!');
             return;
         }
 
-        try {
+        const c = createOrderData.customerInfo;
+        if (
+            !c.name ||
+            !c.surname ||
+            !c.email ||
+            !c.phone ||
+            !c.city ||
+            !c.district ||
+            !c.deliveryAddress
+        ) {
+            setError('Lütfen zorunlu alanları boş bırakmayınız!');
+            return;
+        }
 
+        setLoading(true);
+        setError(null);
+        setMessage('');
+
+        try {
             const orderPayload: ICreateOrder = {
                 ...createOrderData,
                 customerInfo: {
-                    ...createOrderData.customerInfo,
-                    invoiceAddress: addressCheck ? createOrderData.customerInfo.deliveryAddress :
-                        createOrderData.customerInfo.invoiceAddress
-                }
-            }
-
-            if (!orderPayload.customerInfo.name ||
-                !orderPayload.customerInfo.surname ||
-                !orderPayload.customerInfo.email ||
-                !orderPayload.customerInfo.phone ||
-                !orderPayload.customerInfo.city ||
-                !orderPayload.customerInfo.district ||
-                !orderPayload.customerInfo.deliveryAddress
-            ) {
-                setError('Lütfen zorunlu alanları boş bırakmayınız!');
-                return;
-            }
+                    ...c,
+                    invoiceAddress: addressCheck ? c.deliveryAddress : c.invoiceAddress,
+                },
+            };
 
             const response = await orderServices.createOrder(orderPayload);
 
             if (response && response.success) {
-                setMessage(response.message ? response.message : 'Siparişiniz Başarıyla Oluşturuldu!');
+                setMessage(response.message || 'Siparişiniz Başarıyla Oluşturuldu!');
                 onClose();
                 onSuccess();
             } else {
                 setError(response.error || response.message || 'Sipariş Oluşturulamadı!');
             }
-
-        } catch (error) {
-            setError('Sipariş oluşturulurken hata meydana geldi! ' + error);
+        } catch (err) {
+            console.error("🔴 handleSubmit: hata", err);
+            setError('Sipariş oluşturulurken hata meydana geldi! ' + err);
         } finally {
             setLoading(false);
         }
-
-    }
-
+    };
 
     return (
         <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-black/35 z-50">
             <div className="mx-10 p-5 relative cursor-pointer rounded-lg bg-zinc-200 h-[85vh] w-150 overflow-y-auto">
-                <span onClick={onClose} className="absolute top-1 font-extrabold right-2">X</span>
+                <span onClick={onClose} className="absolute top-1 font-extrabold right-2 cursor-pointer">X</span>
 
                 <div className="w-full mb-6 border-b pb-3 flex items-start">
                     <h2 className="font-bold text-2xl">Siparişi Tamamla!</h2>
                 </div>
-                <form onSubmit={handleSubmit} className="h-full w-full" method="post">
+
+                {error && (
+                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                        {error}
+                    </div>
+                )}
+
+                <form
+                    onSubmit={handleSubmit}
+                    className="h-full w-full z-50"
+                >
 
                     <div className="flex w-full items-center justify-center gap-2">
                         <div className="flex flex-col w-full flex-1 items-center justify-center">
@@ -272,8 +247,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                             </div>
                         </div>
 
-
-
                         <div className="flex flex-col w-full flex-1 items-center justify-center">
                             <div className="flex flex-col flex-1 w-full items-start gap-1">
                                 <label htmlFor="customerInfo.surname">Soy Ad</label>
@@ -291,10 +264,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                             </div>
                         </div>
                     </div>
-
-
-
-
 
                     <div className="flex mt-6 flex-col w-full items-center gap-4">
                         <div className="border-b pb-2 w-full border-gray-300">
@@ -318,9 +287,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                 </div>
                             </div>
 
-
-
-
                             <div className="flex flex-col flex-1 items-center justify-center">
                                 <div className="flex flex-col w-full flex-1 items-start gap-1">
                                     <label htmlFor="customerInfo.phone">Telefon</label>
@@ -339,9 +305,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                 </div>
                             </div>
 
-
-
-
                             <div className="flex flex-col flex-1 items-center justify-center">
                                 <div className="flex flex-col w-full flex-1 items-start gap-1">
                                     <label htmlFor="customerInfo.phone2">Telefon 2</label>
@@ -359,7 +322,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                 </div>
                             </div>
                         </div>
-
 
                         <div className="flex flex-col flex-1 w-full items-center justify-center">
                             <div className="flex flex-col w-full flex-1 items-start gap-1">
@@ -385,11 +347,9 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                 type="checkbox"
                                 checked={addressCheck}
                                 onChange={(e) => setAddressCheck(e.target.checked)}
-                            >
-                            </input>
+                            />
                             <label className="font-semibold underline underline-offset-2" htmlFor="addressCheck" >Fatura Adresim sipariş adresim ile  aynı olsun</label>
                         </div>
-
 
                         {!addressCheck && (
                             <div className="flex flex-col flex-1 w-full items-center justify-center">
@@ -408,7 +368,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                 </div>
                             </div>
                         )}
-
 
                         <div className="flex items-center flex-1 justify-center w-full gap-4">
                             <div className="flex flex-col items-start gap-2">
@@ -430,8 +389,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                 </select>
                             </div>
 
-
-
                             <div className="flex flex-col items-start gap-2">
                                 <label htmlFor="customerInfo.district">İlçe</label>
                                 <select
@@ -442,7 +399,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                     required
                                     className="p-2 border-2 w-32 border-gray-300"
                                 >
-
                                     <option value="">İlçe Seçiniz</option>
                                     {district.map((d) => (
                                         <option key={d.id} value={d.name}>
@@ -451,10 +407,7 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                     ))}
                                 </select>
                             </div>
-
                         </div>
-
-
 
                         <div className="flex flex-col w-full items-start gap-2">
                             <label className="border-b w-full border-b-gray-400 pb-2" htmlFor="orderType">
@@ -472,8 +425,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                     >
                                         <h2>Teslimat</h2>
                                     </div>
-
-
                                 </button>
 
                                 <button
@@ -486,15 +437,9 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                     >
                                         <h2>Mağazadan Alım</h2>
                                     </div>
-
-
                                 </button>
                             </div>
-
                         </div>
-
-
-
 
                         <div className="flex flex-col w-full mb-6 items-start gap-2">
                             <label className="border-b w-full border-b-gray-400 pb-2" htmlFor="paymentType">
@@ -512,8 +457,6 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                     >
                                         <h2>Nakit Ödeme</h2>
                                     </div>
-
-
                                 </button>
 
                                 <button
@@ -526,31 +469,23 @@ export const OrderCreateForm: React.FC<IOrderCreateFormProps> = ({ isOpen, onClo
                                     >
                                         <h2>Banka / Kredi Kartı</h2>
                                     </div>
-
-
                                 </button>
                             </div>
-
                         </div>
-
-
-
                     </div>
-
 
                     <div className="mb-10">
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-2 py-2 cursor-pointer rounded-lg bg-emerald-500 text-center text-white font-bold "
+                            className="px-2 py-2 w-full cursor-pointer hover:bg-emerald-300 mb-24 rounded-lg bg-emerald-500 text-center text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Siparişi Tamamla
+                            {loading ? 'İşleniyor...' : 'Siparişi Tamamla'}
                         </button>
                     </div>
 
                 </form>
             </div>
         </div>
-
     )
 }

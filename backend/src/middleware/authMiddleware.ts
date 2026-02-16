@@ -178,7 +178,6 @@ export const authenticateAndSessionToken = async (req: AuthRequest, res: Respons
         }
 
         if (sessionId) {
-            delete req.user;
             req.sessionId = sessionId;
             return next();
         } else {

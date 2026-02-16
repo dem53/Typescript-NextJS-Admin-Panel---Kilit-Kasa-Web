@@ -6,7 +6,8 @@ export const cartServices = {
 
     getCartSession(){
         return apiCartFetch<ICart>('cart', {
-            method: "GET"
+            method: "GET",
+            credentials: 'include'
         });
     },
 

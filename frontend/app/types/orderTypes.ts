@@ -86,7 +86,10 @@ export interface ICreateOrder {
 
 
 
-export interface IUpdateStatusOrder {
+export interface IUpdateOrder {
+   customerInfo?: ICustomerInfo | any,
+   paymentType?: PaymentType,
+   orderType?: OrderType,
    paymentStatus?: PaymentStatus | undefined;
    orderStatus?: OrderStatus | undefined;
 }

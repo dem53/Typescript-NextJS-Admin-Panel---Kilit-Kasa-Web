@@ -409,7 +409,8 @@ export const CartContent = () => {
                     <OrderCreateForm
                         isOpen={showOrderModal}
                         onClose={() => setShowOrderModal(false)}
-                        onSuccess={() => console.log("Sipariş oluşturuldu!!")}
+                        onSuccess={fetchCartData}
+                        cartData={cartData!} 
                     />
                 )}
 

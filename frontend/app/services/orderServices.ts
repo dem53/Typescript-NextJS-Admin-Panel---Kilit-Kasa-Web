@@ -1,5 +1,4 @@
 import { apiAuthFetch, apiCartFetch } from "../api/api";
-import { IApiResponse } from "../types/apiResponseType";
 import { ICreateOrder, IOrder, IUpdateStatusOrder } from "../types/orderTypes";
 
 
@@ -14,17 +13,25 @@ export const orderServices = {
     createOrder(data: ICreateOrder) {
         return apiCartFetch<IOrder>(`create/order`, {
             method: "POST",
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            credentials: "include"
         });
     },
 
 
-    updateOrder(id: string, data: IUpdateStatusOrder){
+    updateOrder(id: string, data: IUpdateStatusOrder) {
         return apiAuthFetch<IOrder>(`update/order/${id}`, {
             method: "PATCH",
             body: JSON.stringify(data)
         });
     },
+
+
+    approveOrder(id: string) {
+        return apiAuthFetch<IOrder>(`approve/order/${id}`, {
+            method: "PUT"
+        });
+    }
 
 
 }
